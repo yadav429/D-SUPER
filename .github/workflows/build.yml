@@ -1,0 +1,63 @@
+name: D-SUPER Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Create Flutter Platforms
+        run: flutter create --platforms=android,windows --project-name d_super .
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: D-SUPER-Android-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+  windows:
+    name: Windows EXE
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Create Flutter Platforms
+        run: flutter create --platforms=android,windows --project-name d_super .
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Windows
+        run: flutter build windows --release
+
+      - name: Create ZIP
+        run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath D-SUPER-Windows.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: D-SUPER-Windows
+          path: D-SUPER-Windows.zip
