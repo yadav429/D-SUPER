@@ -388,8 +388,6 @@ final salt = base64Encode(saltBytes);
       ),
     );
   }
-}
-
   void openCalculator() {
     Navigator.push(
       context,
@@ -398,7 +396,9 @@ final salt = base64Encode(saltBytes);
       ),
     );
   }
+
 }
+
 
 class CalculatorPage extends StatefulWidget {
   final bool hindi;
