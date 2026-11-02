@@ -1,5 +1,4 @@
-
-    name: D-SUPER Build
+name: D-SUPER Build
 
 on:
   push:
@@ -13,7 +12,6 @@ jobs:
   android:
     name: Android APK
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -50,7 +48,6 @@ jobs:
   windows:
     name: Windows EXE
     runs-on: windows-2022
-
     steps:
       - uses: actions/checkout@v4
 
