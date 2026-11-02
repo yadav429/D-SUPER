@@ -20,3 +20,10 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+dependencies:
+  flutter:
+    sdk: flutter
+
+  flutter_secure_storage: ^9.2.4
+  cryptography: ^2.7.0
+  local_auth: ^2.3.0
