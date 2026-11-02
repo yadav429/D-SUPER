@@ -1,4 +1,4 @@
-
+import 'dart:math';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -130,9 +130,9 @@ class _DSuperAppState extends State<DSuperApp> {
         return;
       }
 
-      final salt = base64Encode(
-        Cryptography.instance.newRandomBytes(16),
-      );
+      final random = Random.secure();
+final saltBytes = List<int>.generate(16, (_) => random.nextInt(256));
+final salt = base64Encode(saltBytes);
       final hash = await makeHash(pin, salt);
 
       await storage.write(key: 'pin_salt', value: salt);
