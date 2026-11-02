@@ -349,10 +349,14 @@ final salt = base64Encode(saltBytes);
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
                       onTap: () {
-                        showMessage(
-                          '${hindi ? module['hi'] : module['en']} - Coming Soon',
-                        );
-                      },
+  if (module['en'] == 'Calculator') {
+    openCalculator();
+  } else {
+    showMessage(
+      '${hindi ? module['hi'] : module['en']} - Coming Soon',
+    );
+  }
+},
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Column(
@@ -386,3 +390,152 @@ final salt = base64Encode(saltBytes);
   }
 }
 
+  void openCalculator() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CalculatorPage(hindi: hindi),
+      ),
+    );
+  }
+}
+
+class CalculatorPage extends StatefulWidget {
+  final bool hindi;
+
+  const CalculatorPage({super.key, required this.hindi});
+
+  @override
+  State<CalculatorPage> createState() => _CalculatorPageState();
+}
+
+class _CalculatorPageState extends State<CalculatorPage> {
+  String display = '0';
+  double? firstNumber;
+  String? operation;
+  bool newNumber = true;
+
+  void press(String value) {
+    setState(() {
+      if (value == 'C') {
+        display = '0';
+        firstNumber = null;
+        operation = null;
+        newNumber = true;
+      } else if (value == '⌫') {
+        display = display.length > 1
+            ? display.substring(0, display.length - 1)
+            : '0';
+      } else if (['+', '−', '×', '÷'].contains(value)) {
+        firstNumber = double.tryParse(display);
+        operation = value;
+        newNumber = true;
+      } else if (value == '=') {
+        if (firstNumber == null || operation == null) return;
+
+        final second = double.tryParse(display) ?? 0;
+        double result = 0;
+
+        switch (operation) {
+          case '+':
+            result = firstNumber! + second;
+            break;
+          case '−':
+            result = firstNumber! - second;
+            break;
+          case '×':
+            result = firstNumber! * second;
+            break;
+          case '÷':
+            if (second == 0) {
+              display = 'Error';
+              firstNumber = null;
+              operation = null;
+              newNumber = true;
+              return;
+            }
+            result = firstNumber! / second;
+            break;
+        }
+
+        display = result == result.toInt()
+            ? result.toInt().toString()
+            : result.toString();
+        firstNumber = null;
+        operation = null;
+        newNumber = true;
+      } else {
+        if (value == '.' && display.contains('.') && !newNumber) return;
+
+        display = newNumber
+            ? value == '.' ? '0.' : value
+            : display == '0' && value != '.'
+                ? value
+                : display + value;
+        newNumber = false;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final buttons = [
+      ['C', '⌫', '÷', '×'],
+      ['7', '8', '9', '−'],
+      ['4', '5', '6', '+'],
+      ['1', '2', '3', '='],
+      ['0', '.', '', ''],
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.hindi ? 'कैलकुलेटर' : 'Calculator'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Expanded(
+              child: Container(
+                alignment: Alignment.bottomRight,
+                padding: const EdgeInsets.all(20),
+                child: FittedBox(
+                  child: Text(
+                    display,
+                    style: const TextStyle(
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            for (final row in buttons)
+              Expanded(
+                child: Row(
+                  children: [
+                    for (final value in row)
+                      Expanded(
+                        child: value.isEmpty
+                            ? const SizedBox()
+                            : Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: ElevatedButton(
+                                  onPressed: () => press(value),
+                                  child: Text(
+                                    value,
+                                    style: const TextStyle(fontSize: 24),
+                                  ),
+                                ),
+                              ),
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+}
