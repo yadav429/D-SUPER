@@ -350,6 +350,7 @@ final salt = base64Encode(saltBytes);
                       borderRadius: BorderRadius.circular(12),
                       onTap: () {
   if (module['en'] == 'Calculator') {
+    debugPrint('Calculator clicked');
     openCalculator();
   } else {
     showMessage(
