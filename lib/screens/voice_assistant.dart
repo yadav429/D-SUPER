@@ -1,3 +1,4 @@
+  
 
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -24,10 +25,15 @@ class _VoiceAssistantState extends State<VoiceAssistant> {
 
   bool available = false;
   bool listening = false;
+  bool initializing = false;
+  bool processing = false;
+
   late bool hindi;
 
   String recognized = '';
-  String status = 'Ready';
+  String status = 'Initializing...';
+
+  Future<bool>? initialization;
 
   @override
   void initState() {
@@ -36,76 +42,144 @@ class _VoiceAssistantState extends State<VoiceAssistant> {
     initializeVoice();
   }
 
-  Future<void> initializeVoice() async {
+  Future<bool> initializeVoice() {
+    initialization ??= _doInitialize();
+    return initialization!;
+  }
+
+  Future<bool> _doInitialize() async {
+    if (mounted) {
+      setState(() {
+        initializing = true;
+        status = 'Initializing voice...';
+      });
+    }
+
     try {
-      available = await speech.initialize(
+      final result = await speech.initialize(
+        debugLogging: true,
         onStatus: (value) {
-          if (mounted) {
-            setState(() {
-              status = value;
-              listening = speech.isListening;
-            });
-          }
+          if (!mounted) return;
+
+          setState(() {
+            status = value;
+            listening = speech.isListening;
+          });
         },
         onError: (error) {
+          if (!mounted) return;
+
+          setState(() {
+            status = 'Speech Error: ${error.errorMsg}';
+            listening = false;
+          });
+        },
+      );
+
+      available = result;
+
+      try {
+        await tts.setSpeechRate(0.45);
+        await tts.setVolume(1.0);
+      } catch (e) {
+        debugPrint('TTS Error: $e');
+      }
+
+      if (!result) {
+        status = 'Speech recognition unavailable. Check microphone permission and Google speech service.';
+      } else {
+        status = 'Voice Ready';
+      }
+
+      return result;
+    } catch (e) {
+      available = false;
+      status = 'Initialization Error: $e';
+      debugPrint('VOICE INITIALIZATION ERROR: $e');
+      return false;
+    } finally {
+      initializing = false;
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> speak(String message) async {
+    try {
+      await tts.stop();
+      await tts.setLanguage(hindi ? 'hi-IN' : 'en-US');
+      await tts.speak(message);
+    } catch (e) {
+      debugPrint('TTS Error: $e');
+    }
+  }
+
+  Future<void> startListening() async {
+    if (initializing || listening || processing) return;
+
+    try {
+      if (!available) {
+        final ready = await initializeVoice();
+
+        if (!ready) {
           if (mounted) {
             setState(() {
-              status = error.errorMsg;
-              listening = false;
+              status = 'Voice unavailable. Check microphone permission and speech service.';
             });
+          }
+          return;
+        }
+      }
+
+      await tts.stop();
+
+      if (!mounted) return;
+
+      setState(() {
+        recognized = '';
+        status = 'Starting microphone...';
+      });
+
+      await speech.listen(
+        localeId: hindi ? 'hi_IN' : 'en_US',
+        listenFor: const Duration(seconds: 30),
+        pauseFor: const Duration(seconds: 4),
+        onResult: (result) {
+          if (!mounted) return;
+
+          setState(() {
+            recognized = result.recognizedWords;
+          });
+
+          if (result.finalResult && !processing) {
+            processCommand(result.recognizedWords);
           }
         },
       );
 
-      await tts.setSpeechRate(0.45);
-      await tts.setVolume(1.0);
-    } catch (e) {
-      status = 'Voice initialization failed';
-    }
-
-    if (mounted) setState(() {});
-  }
-
-  Future<void> speak(String message) async {
-    await tts.stop();
-    await tts.setLanguage(hindi ? 'hi-IN' : 'en-US');
-    await tts.speak(message);
-  }
-
-  Future<void> startListening() async {
-    if (!available) {
-      await speak('Speech recognition is unavailable');
-      return;
-    }
-
-    await tts.stop();
-
-    setState(() {
-      recognized = '';
-      listening = true;
-      status = 'Listening...';
-    });
-
-    await speech.listen(
-      localeId: hindi ? 'hi_IN' : 'en_US',
-      listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 4),
-      onResult: (result) {
-        if (!mounted) return;
-
+      if (mounted) {
         setState(() {
-          recognized = result.recognizedWords;
+          listening = speech.isListening;
+          status = listening
+              ? 'Listening...'
+              : 'Microphone did not start. Check speech service.';
         });
-
-        if (result.finalResult) {
-          processCommand(recognized);
-        }
-      },
-    );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          listening = false;
+          status = 'Start Error: $e';
+        });
+      }
+    }
   }
 
   Future<void> stopListening() async {
-    await speech.stop();
+    try {
+      await speech.stop();
+    } catch (e) {
+      debugPrint('Stop Error: $e');
+    }
 
     if (mounted) {
       setState(() {
@@ -116,25 +190,21 @@ class _VoiceAssistantState extends State<VoiceAssistant> {
   }
 
   Future<void> openVideo() async {
-    final uri = Uri.parse('https://www.youtube.com');
-
     await speak(hindi ? 'वीडियो खोल रहा हूँ' : 'Opening video');
 
     await launchUrl(
-      uri,
+      Uri.parse('https://www.youtube.com'),
       mode: LaunchMode.externalApplication,
     );
   }
 
   Future<void> openWhatsApp() async {
-    final uri = Uri.parse('https://wa.me/');
-
     await speak(
       hindi ? 'व्हाट्सएप खोल रहा हूँ' : 'Opening WhatsApp',
     );
 
     await launchUrl(
-      uri,
+      Uri.parse('https://wa.me/'),
       mode: LaunchMode.externalApplication,
     );
   }
@@ -143,9 +213,7 @@ class _VoiceAssistantState extends State<VoiceAssistant> {
     if (message.trim().isEmpty) return;
 
     await speak(
-      hindi
-          ? 'आपका मैसेज तैयार है'
-          : 'Your message is ready',
+      hindi ? 'आपका मैसेज तैयार है' : 'Your message is ready',
     );
 
     if (!mounted) return;
@@ -159,117 +227,126 @@ class _VoiceAssistantState extends State<VoiceAssistant> {
   }
 
   Future<void> processCommand(String command) async {
-    final text = command.toLowerCase().trim();
+    if (processing) return;
 
-    await speech.stop();
+    processing = true;
 
-    if (mounted) {
-      setState(() {
-        listening = false;
-        status = 'Processing';
-      });
-    }
+    try {
+      await speech.stop();
 
-    // Wake word
-    if (text.contains('hey d-super') ||
-        text.contains('hey d super') ||
-        text.contains('हे डी सुपर')) {
-      await speak(
-        hindi
-            ? 'जी, बताइए क्या करना है'
-            : 'Yes, tell me what to do',
-      );
-      return;
-    }
-
-    // Calculator
-    if (text.contains('calculator') ||
-        text.contains('कैलकुलेटर')) {
-      await speak(hindi ? 'कैलकुलेटर खोल रहा हूँ' : 'Opening calculator');
-      await widget.onOpenModule('Calculator');
-      return;
-    }
-
-    // Chart
-    if (text.contains('chart') ||
-        text.contains('चार्ट')) {
-      await speak(hindi ? 'चार्ट खोल रहा हूँ' : 'Opening chart');
-      await widget.onOpenModule('Chart');
-      return;
-    }
-
-    // Video
-    if (text.contains('video') ||
-        text.contains('वीडियो')) {
-      await openVideo();
-      return;
-    }
-
-    // WhatsApp
-    if (text.contains('whatsapp') ||
-        text.contains('व्हाट्सएप')) {
-      await openWhatsApp();
-      return;
-    }
-
-    // Message
-    final englishPrefixes = [
-      'type message ',
-      'message ',
-      'write message ',
-    ];
-
-    String? message;
-
-    for (final prefix in englishPrefixes) {
-      if (text.startsWith(prefix)) {
-        message = command.trim().substring(prefix.length).trim();
-        break;
+      if (mounted) {
+        setState(() {
+          listening = false;
+          status = 'Processing command...';
+        });
       }
-    }
 
-    if (message == null) {
-      final hindiPrefixes = [
-        'मैसेज लिखो ',
-        'संदेश लिखो ',
+      final text = command.toLowerCase().trim();
+
+      if (text.contains('hey d-super') ||
+          text.contains('hey d super') ||
+          text.contains('हे डी सुपर')) {
+        await speak(
+          hindi ? 'जी, बताइए क्या करना है' : 'Yes, tell me what to do',
+        );
+        return;
+      }
+
+      if (text.contains('calculator') ||
+          text.contains('कैलकुलेटर')) {
+        await speak(
+          hindi ? 'कैलकुलेटर खोल रहा हूँ' : 'Opening calculator',
+        );
+        await widget.onOpenModule('Calculator');
+        return;
+      }
+
+      if (text.contains('chart') || text.contains('चार्ट')) {
+        await speak(
+          hindi ? 'चार्ट खोल रहा हूँ' : 'Opening chart',
+        );
+        await widget.onOpenModule('Chart');
+        return;
+      }
+
+      if (text.contains('video') || text.contains('वीडियो')) {
+        await openVideo();
+        return;
+      }
+
+      if (text.contains('whatsapp') ||
+          text.contains('व्हाट्सएप')) {
+        await openWhatsApp();
+        return;
+      }
+
+      final prefixes = [
+        'type message ',
+        'message ',
+        'write message ',
       ];
 
-      for (final prefix in hindiPrefixes) {
-        if (command.trim().startsWith(prefix)) {
+      String? message;
+
+      for (final prefix in prefixes) {
+        if (text.startsWith(prefix)) {
           message = command.trim().substring(prefix.length).trim();
           break;
         }
       }
-    }
 
-    if (message != null && message.isNotEmpty) {
-      await prepareMessage(message);
-      return;
-    }
+      if (message == null) {
+        final hindiPrefixes = [
+          'मैसेज लिखो ',
+          'संदेश लिखो ',
+        ];
 
-    // Gallery
-    if (text.contains('gallery') ||
-        text.contains('गैलरी')) {
-      await widget.onOpenModule('Gallery');
-      return;
-    }
+        for (final prefix in hindiPrefixes) {
+          if (command.trim().startsWith(prefix)) {
+            message = command.trim().substring(prefix.length).trim();
+            break;
+          }
+        }
+      }
 
-    // Lock
-    if (text.contains('lock app') ||
-        text.contains('ऐप लॉक')) {
+      if (message != null && message.isNotEmpty) {
+        await prepareMessage(message);
+        return;
+      }
+
+      if (text.contains('gallery') ||
+          text.contains('गैलरी')) {
+        await widget.onOpenModule('Gallery');
+        return;
+      }
+
+      if (text.contains('lock app') ||
+          text.contains('ऐप लॉक')) {
+        await speak(
+          hindi
+              ? 'डैशबोर्ड से लॉक बटन दबाएँ'
+              : 'Please use the dashboard lock button',
+        );
+        return;
+      }
+
       await speak(
         hindi
-            ? 'डैशबोर्ड से लॉक बटन दबाएँ'
-            : 'Please use the dashboard lock button',
+            ? 'माफ कीजिए, यह कमांड समझ नहीं आया'
+            : 'Sorry, command not recognized',
       );
-      return;
-    }
+    } catch (e) {
+      debugPrint('COMMAND ERROR: $e');
 
-    await speak(
-      hindi
-          ? 'माफ कीजिए, यह कमांड समझ नहीं आया'
-          : 'Sorry, command not recognized',
-    );
+      if (mounted) {
+        setState(() {
+          status = 'Command Error: $e';
+        });
+      }
+    } finally {
+      processing = false;
+      if (mounted) setState(() {});
+    }
   }
 
   @override
@@ -312,8 +389,11 @@ class _VoiceAssistantState extends State<VoiceAssistant> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 12),
-              Text('Status: $status'),
+              const SizedBox(height: 15),
+              Text(
+                'Status: $status',
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 25),
               Icon(
                 listening ? Icons.graphic_eq : Icons.mic_none,
@@ -330,23 +410,35 @@ class _VoiceAssistantState extends State<VoiceAssistant> {
               ),
               const SizedBox(height: 25),
               FilledButton.icon(
-                onPressed: listening
-                    ? stopListening
-                    : startListening,
+                onPressed: initializing || processing
+                    ? null
+                    : (listening ? stopListening : startListening),
                 icon: Icon(
                   listening ? Icons.stop : Icons.mic,
                 ),
                 label: Text(
-                  listening
-                      ? (hindi ? 'बंद करें' : 'Stop')
-                      : (hindi ? 'बोलना शुरू करें' : 'Start Voice'),
+                  initializing
+                      ? 'Initializing...'
+                      : listening
+                          ? (hindi ? 'बंद करें' : 'Stop')
+                          : (hindi ? 'बोलना शुरू करें' : 'Start Voice'),
                 ),
               ),
               const SizedBox(height: 20),
               Text(
-                hindi
-                    ? 'भाषा: हिन्दी'
-                    : 'Language: English',
+                hindi ? 'भाषा: हिन्दी' : 'Language: English',
+              ),
+              const SizedBox(height: 15),
+              TextButton.icon(
+                onPressed: initializing ? null : () {
+                  setState(() {
+                    initialization = null;
+                    available = false;
+                  });
+                  initializeVoice();
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry Voice Initialization'),
               ),
             ],
           ),
