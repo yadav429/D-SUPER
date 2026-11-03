@@ -390,10 +390,11 @@ final salt = base64Encode(saltBytes);
     );
   }
   void openCalculator() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CalculatorPage(hindi: hindi),
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (routeContext) {
+          return CalculatorPage(hindi: hindi);
+        },
       ),
     );
   }
