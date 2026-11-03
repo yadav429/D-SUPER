@@ -23,6 +23,9 @@ class DSuperApp extends StatefulWidget {
 }
 
 class _DSuperAppState extends State<DSuperApp> {
+  final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
+
   final storage = const FlutterSecureStorage();
   final auth = LocalAuthentication();
 
@@ -212,7 +215,7 @@ class _DSuperAppState extends State<DSuperApp> {
 
     if (!mounted) return;
 
-    Navigator.of(context).push(
+    navigatorKey.currentState?.push(
       MaterialPageRoute(
         builder: (_) => ModulePlaceholderPage(
           title: name,
@@ -223,7 +226,7 @@ class _DSuperAppState extends State<DSuperApp> {
   }
 
   void openVoiceAssistant() {
-    Navigator.of(context).push(
+    navigatorKey.currentState?.push(
       MaterialPageRoute(
         builder: (_) => VoiceAssistant(
           hindi: hindi,
@@ -234,7 +237,7 @@ class _DSuperAppState extends State<DSuperApp> {
   }
 
   void openCalculator() {
-    Navigator.of(context).push(
+    navigatorKey.currentState?.push(
       MaterialPageRoute<void>(
         builder: (_) => CalculatorPage(hindi: hindi),
       ),
@@ -250,6 +253,7 @@ class _DSuperAppState extends State<DSuperApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'D-SUPER',
       themeMode: themeMode,
