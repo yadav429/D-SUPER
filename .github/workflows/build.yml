@@ -1,3 +1,4 @@
+
 name: D-SUPER Build
 
 on:
@@ -22,15 +23,35 @@ jobs:
       - name: Create Flutter Platforms
         run: flutter create --platforms=android,windows --project-name d_super .
 
-      - name: Add Fingerprint Permission
+      - name: Add Android Permissions
         run: |
           python3 - <<'PY'
           from pathlib import Path
+
           p = Path("android/app/src/main/AndroidManifest.xml")
           s = p.read_text()
-          permission = '    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>\n'
-          if permission not in s:
-              s = s.replace('<application', permission + '<application', 1)
+
+          permissions = [
+              "android.permission.USE_BIOMETRIC",
+              "android.permission.RECORD_AUDIO",
+              "android.permission.INTERNET"
+          ]
+
+          for permission in permissions:
+              line = f'<uses-permission android:name="{permission}"/>'
+              if line not in s:
+                  s = s.replace("<application", f"    {line}\n    <application", 1)
+
+          if "<queries>" not in s:
+              queries = """
+              <queries>
+                  <intent>
+                      <action android:name="android.speech.RecognitionService"/>
+                  </intent>
+              </queries>
+              """
+              s = s.replace("<application", queries + "\n    <application", 1)
+
           p.write_text(s)
           PY
 
@@ -71,3 +92,4 @@ jobs:
         with:
           name: D-SUPER-Windows
           path: D-SUPER-Windows.zip
+
