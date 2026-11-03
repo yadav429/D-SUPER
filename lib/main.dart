@@ -1,10 +1,14 @@
+
 import 'dart:math';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:local_auth/local_auth.dart';
+
+import 'screens/voice_assistant.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -85,18 +89,22 @@ class _DSuperAppState extends State<DSuperApp> {
       secretKey: SecretKey(utf8.encode(pin)),
       nonce: base64Decode(salt),
     );
+
     return base64Encode(await key.extractBytes());
   }
 
   bool sameHash(String a, String b) {
     final x = base64Decode(a);
     final y = base64Decode(b);
+
     if (x.length != y.length) return false;
 
     int difference = 0;
+
     for (int i = 0; i < x.length; i++) {
       difference |= x[i] ^ y[i];
     }
+
     return difference == 0;
   }
 
@@ -104,7 +112,8 @@ class _DSuperAppState extends State<DSuperApp> {
     final pin = pinController.text.trim();
     pinController.clear();
 
-    if (pin.length < 4 || pin.length > 8 ||
+    if (pin.length < 4 ||
+        pin.length > 8 ||
         int.tryParse(pin) == null) {
       showMessage(hindi
           ? '4 से 8 अंकों का PIN डालें'
@@ -124,15 +133,18 @@ class _DSuperAppState extends State<DSuperApp> {
 
       if (firstPin != pin) {
         firstPin = null;
-        showMessage(hindi ? 'PIN मेल नहीं हुआ। दोबारा शुरू करें।'
+        showMessage(hindi
+            ? 'PIN मेल नहीं हुआ। दोबारा शुरू करें।'
             : 'PINs do not match. Start again.');
         setState(() {});
         return;
       }
 
       final random = Random.secure();
-final saltBytes = List<int>.generate(16, (_) => random.nextInt(256));
-final salt = base64Encode(saltBytes);
+      final saltBytes =
+          List<int>.generate(16, (_) => random.nextInt(256));
+
+      final salt = base64Encode(saltBytes);
       final hash = await makeHash(pin, salt);
 
       await storage.write(key: 'pin_salt', value: salt);
@@ -147,10 +159,12 @@ final salt = base64Encode(saltBytes);
     }
 
     final hash = await makeHash(pin, savedSalt!);
+
     if (sameHash(hash, savedHash!)) {
       if (mounted) setState(() => unlocked = true);
     } else {
-      showMessage(hindi ? 'गलत PIN। फिर कोशिश करें।'
+      showMessage(hindi
+          ? 'गलत PIN। फिर कोशिश करें।'
           : 'Incorrect PIN. Try again.');
     }
   }
@@ -171,7 +185,9 @@ final salt = base64Encode(saltBytes);
         setState(() => unlocked = true);
       }
     } on PlatformException catch (e) {
-      showMessage('${hindi ? "Fingerprint error" : "Authentication error"}: ${e.message ?? "Unavailable"}');
+      showMessage(
+        '${hindi ? "Fingerprint error" : "Authentication error"}: ${e.message ?? "Unavailable"}',
+      );
     } catch (_) {
       showMessage(hindi
           ? 'Fingerprint Login उपलब्ध नहीं है'
@@ -181,8 +197,47 @@ final salt = base64Encode(saltBytes);
 
   void showMessage(String message) {
     if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
+    );
+  }
+
+  // Open modules from dashboard or voice commands.
+  Future<void> openVoiceModule(String name) async {
+    if (name == 'Calculator') {
+      openCalculator();
+      return;
+    }
+
+    if (!mounted) return;
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ModulePlaceholderPage(
+          title: name,
+          hindi: hindi,
+        ),
+      ),
+    );
+  }
+
+  void openVoiceAssistant() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => VoiceAssistant(
+          hindi: hindi,
+          onOpenModule: openVoiceModule,
+        ),
+      ),
+    );
+  }
+
+  void openCalculator() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CalculatorPage(hindi: hindi),
+      ),
     );
   }
 
@@ -222,7 +277,9 @@ final salt = base64Encode(saltBytes);
     final setup = savedSalt == null || savedHash == null;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('D-SUPER Security')),
+      appBar: AppBar(
+        title: const Text('D-SUPER Security'),
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -293,6 +350,11 @@ final salt = base64Encode(saltBytes);
         ),
         actions: [
           IconButton(
+            tooltip: 'Voice Assistant',
+            icon: const Icon(Icons.mic),
+            onPressed: openVoiceAssistant,
+          ),
+          IconButton(
             tooltip: 'Language',
             icon: const Icon(Icons.translate),
             onPressed: () => setState(() => hindi = !hindi),
@@ -323,7 +385,9 @@ final salt = base64Encode(saltBytes);
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              hindi ? 'आपका Personal Dashboard' : 'Your Personal Dashboard',
+              hindi
+                  ? 'आपका Personal Dashboard'
+                  : 'Your Personal Dashboard',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 6),
@@ -345,22 +409,12 @@ final salt = base64Encode(saltBytes);
                 ),
                 itemBuilder: (context, index) {
                   final module = modules[index];
+
                   return Card(
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
                       onTap: () {
-                        if (module['en'] == 'Calculator') {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (routeContext) =>
-                                  CalculatorPage(hindi: hindi),
-                            ),
-                          );
-                        } else {
-                          showMessage(
-                            '${hindi ? module['hi'] : module['en']} - Coming Soon',
-                          );
-                        }
+                        openVoiceModule(module['en'] as String);
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(12),
@@ -393,18 +447,49 @@ final salt = base64Encode(saltBytes);
       ),
     );
   }
-  void openCalculator() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (routeContext) {
-          return CalculatorPage(hindi: hindi);
-        },
+}
+
+class ModulePlaceholderPage extends StatelessWidget {
+  final String title;
+  final bool hindi;
+
+  const ModulePlaceholderPage({
+    super.key,
+    required this.title,
+    required this.hindi,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.construction, size: 70),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 25,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              hindi
+                  ? 'यह मॉड्यूल विकास के अधीन है'
+                  : 'This module is under development',
+            ),
+          ],
+        ),
       ),
     );
   }
-
 }
-
 
 class CalculatorPage extends StatefulWidget {
   final bool hindi;
@@ -467,6 +552,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
         display = result == result.toInt()
             ? result.toInt().toString()
             : result.toString();
+
         firstNumber = null;
         operation = null;
         newNumber = true;
@@ -474,10 +560,11 @@ class _CalculatorPageState extends State<CalculatorPage> {
         if (value == '.' && display.contains('.') && !newNumber) return;
 
         display = newNumber
-            ? value == '.' ? '0.' : value
+            ? (value == '.' ? '0.' : value)
             : display == '0' && value != '.'
                 ? value
                 : display + value;
+
         newNumber = false;
       }
     });
@@ -543,5 +630,5 @@ class _CalculatorPageState extends State<CalculatorPage> {
       ),
     );
   }
-
 }
+
