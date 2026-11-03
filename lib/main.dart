@@ -349,15 +349,19 @@ final salt = base64Encode(saltBytes);
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
                       onTap: () {
-  if (module['en'] == 'Calculator') {
-    debugPrint('Calculator clicked');
-    openCalculator();
-  } else {
-    showMessage(
-      '${hindi ? module['hi'] : module['en']} - Coming Soon',
-    );
-  }
-},
+                        if (module['en'] == 'Calculator') {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (routeContext) =>
+                                  CalculatorPage(hindi: hindi),
+                            ),
+                          );
+                        } else {
+                          showMessage(
+                            '${hindi ? module['hi'] : module['en']} - Coming Soon',
+                          );
+                        }
+                      },
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Column(
