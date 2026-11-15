@@ -52,7 +52,7 @@ class _CyberSecurityLabPageState extends State<CyberSecurityLabPage> {
     }
     final result = warnings.isEmpty
         ? (_hi ? 'कोई सामान्य red flag नहीं मिला। यह सुरक्षित होने की गारंटी नहीं है।' : 'No common red flags detected. This does not guarantee the site is safe.')
-        : '${_hi ? 'चेतावनी' : 'Warnings'}:\\n• ${warnings.join('\\n• ')}\\n\\n${_hi ? 'लिंक खोलने से पहले domain verify करें।' : 'Verify the domain independently before opening it.'}';
+        : '${_hi ? 'चेतावनी' : 'Warnings'}:\n• ${warnings.join('\n• ')}\n\n${_hi ? 'लिंक खोलने से पहले domain verify करें।' : 'Verify the domain independently before opening it.'}';
     setState(() => _urlReport = result);
   }
 
@@ -73,7 +73,7 @@ class _CyberSecurityLabPageState extends State<CyberSecurityLabPage> {
     if (weak.contains(value.toLowerCase())) score = 0;
     final label = score <= 2 ? (_hi ? 'कमज़ोर' : 'Weak') : score <= 4 ? (_hi ? 'मध्यम' : 'Moderate') : (_hi ? 'मज़बूत' : 'Strong');
     setState(() {
-      _passwordReport = '$label  •  $score/6\\n${_hi ? 'लंबा और unique passphrase रखें। यह जाँच केवल इस device पर होती है।' : 'Use a long, unique passphrase. This check runs locally on this device.'}';
+      _passwordReport = '$label  •  $score/6\n${_hi ? 'लंबा और unique passphrase रखें। यह जाँच केवल इस device पर होती है।' : 'Use a long, unique passphrase. This check runs locally on this device.'}';
     });
   }
 
@@ -119,7 +119,7 @@ class _CyberSecurityLabPageState extends State<CyberSecurityLabPage> {
       Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF103D29), Color(0xFF07120D)]), border: Border.all(color: _green.withValues(alpha: 0.65)), borderRadius: BorderRadius.circular(14)),
-        child: Text(_hi ? 'LOCAL SECURITY CONSOLE\\nये tools आपके device पर काम करते हैं। किसी दूसरे system को scan या access नहीं करते।' : 'LOCAL SECURITY CONSOLE\\nThese tools run on-device and do not scan or access anyone else’s system.', style: const TextStyle(color: _green, height: 1.5, fontFamily: 'monospace')),
+        child: Text(_hi ? 'LOCAL SECURITY CONSOLE\nये tools आपके device पर काम करते हैं। किसी दूसरे system को scan या access नहीं करते।' : 'LOCAL SECURITY CONSOLE\nThese tools run on-device and do not scan or access anyone else’s system.', style: const TextStyle(color: _green, height: 1.5, fontFamily: 'monospace')),
       ),
       const SizedBox(height: 14),
       _section('URL SAFETY CHECK', Icons.link, Column(children: [
