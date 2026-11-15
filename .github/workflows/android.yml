@@ -32,6 +32,15 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Generate missing Android platform files
+        shell: bash
+        run: |
+          if [ ! -f android/gradlew ]; then
+            cp android/app/src/main/AndroidManifest.xml /tmp/d-super-AndroidManifest.xml
+            flutter create --platforms=android --project-name d_super .
+            cp /tmp/d-super-AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+          fi
+
       - name: Install dependencies
         run: flutter pub get
 
