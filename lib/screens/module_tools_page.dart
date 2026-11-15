@@ -12,6 +12,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'phone_intelligence_page.dart';
+
 class ModuleToolsPage extends StatelessWidget {
   const ModuleToolsPage({super.key, required this.module, required this.hindi});
   final String module;
@@ -21,7 +23,7 @@ class ModuleToolsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (module) {
       case 'Photo Analyzer': return PhotoAnalyzerPage(hindi: hindi);
-      case 'Phone Checker': return PhoneCheckerPage(hindi: hindi);
+      case 'Phone Checker': return PhoneIntelligencePage(hindi: hindi);
       case 'QR & Barcode': return QrScannerPage(hindi: hindi);
       case 'Document Manager': return FileToolPage(hindi: hindi, pdfOnly: false);
       case 'Image Editor': return ImageEditorPage(hindi: hindi);
