@@ -10,6 +10,7 @@ import 'package:local_auth/local_auth.dart';
 
 import 'screens/voice_assistant.dart';
 import 'screens/ai_chat_page.dart';
+import 'screens/module_tools_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -227,10 +228,7 @@ class _DSuperAppState extends State<DSuperApp> {
 
     navigatorKey.currentState?.push(
       MaterialPageRoute(
-        builder: (_) => ModulePlaceholderPage(
-          title: name,
-          hindi: hindi,
-        ),
+        builder: (_) => ModuleToolsPage(module: name, hindi: hindi),
       ),
     );
   }
