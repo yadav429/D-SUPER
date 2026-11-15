@@ -32,6 +32,12 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 12266719
+          accept-android-sdk-licenses: true
+
       - name: Generate missing Android platform files
         shell: bash
         run: |
@@ -56,17 +62,14 @@ jobs:
               match = re.match(r'^(\s*)compileSdk(?:Version)?\s*(?:=\s*)?.*$', line)
               if match:
                   indent = match.group(1)
-                  if target.suffix == ".kts":
-                      lines[i] = indent + "compileSdk = 36"
-                  else:
-                      lines[i] = indent + "compileSdkVersion 36"
+                  lines[i] = indent + ("compileSdk = 36" if target.suffix == ".kts" else "compileSdkVersion 36")
                   break
           else:
               raise SystemExit("Could not find compileSdk declaration to update")
           target.write_text("\n".join(lines) + "\n")
           print(f"Updated {target} compileSdk to 36")
           PY
-          sdkmanager "platforms;android-36"
+          sdkmanager --install "platforms;android-36"
 
       - name: Install dependencies
         run: flutter pub get
