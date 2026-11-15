@@ -37,6 +37,7 @@ jobs:
         with:
           cmdline-tools-version: 12266719
           accept-android-sdk-licenses: true
+          packages: platform-tools
 
       - name: Generate missing Android platform files
         shell: bash
@@ -59,14 +60,14 @@ jobs:
               raise SystemExit("Android app Gradle file not found")
           lines = target.read_text().splitlines()
           for i, line in enumerate(lines):
-              match = re.match(r'^(\s*)compileSdk(?:Version)?\s*(?:=\s*)?.*$', line)
+              match = re.match(r'^(\\s*)compileSdk(?:Version)?\\s*(?:=\\s*)?.*$', line)
               if match:
                   indent = match.group(1)
                   lines[i] = indent + ("compileSdk = 36" if target.suffix == ".kts" else "compileSdkVersion 36")
                   break
           else:
               raise SystemExit("Could not find compileSdk declaration to update")
-          target.write_text("\n".join(lines) + "\n")
+          target.write_text("\\n".join(lines) + "\\n")
           print(f"Updated {target} compileSdk to 36")
           PY
           sdkmanager --install "platforms;android-36"
