@@ -51,15 +51,19 @@ jobs:
           target = next((p for p in candidates if p.exists()), None)
           if target is None:
               raise SystemExit("Android app Gradle file not found")
-          source = target.read_text()
-          updated, count = re.subn(
-              r'(?m)^(\\s*compileSdk(?:Version)?\\s*(?:=\\s*)?)(?:flutter\\.compileSdkVersion|\\d+)',
-              r'\\g<1>36',
-              source,
-          )
-          if count == 0:
+          lines = target.read_text().splitlines()
+          for i, line in enumerate(lines):
+              match = re.match(r'^(\s*)compileSdk(?:Version)?\s*(?:=\s*)?.*$', line)
+              if match:
+                  indent = match.group(1)
+                  if target.suffix == ".kts":
+                      lines[i] = indent + "compileSdk = 36"
+                  else:
+                      lines[i] = indent + "compileSdkVersion 36"
+                  break
+          else:
               raise SystemExit("Could not find compileSdk declaration to update")
-          target.write_text(updated)
+          target.write_text("\n".join(lines) + "\n")
           print(f"Updated {target} compileSdk to 36")
           PY
           sdkmanager "platforms;android-36"
