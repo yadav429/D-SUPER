@@ -9,6 +9,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:local_auth/local_auth.dart';
 
 import 'screens/voice_assistant.dart';
+import 'screens/ai_chat_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -208,6 +209,15 @@ class _DSuperAppState extends State<DSuperApp> {
 
   // Open modules from dashboard or voice commands.
   Future<void> openVoiceModule(String name) async {
+    if (name == 'AI Assistant') {
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (_) => AiChatPage(hindi: hindi),
+        ),
+      );
+      return;
+    }
+
     if (name == 'Calculator') {
       openCalculator();
       return;
