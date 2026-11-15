@@ -11,6 +11,7 @@ import 'package:local_auth/local_auth.dart';
 import 'screens/voice_assistant.dart';
 import 'screens/ai_chat_page.dart';
 import 'screens/module_tools_page.dart';
+import 'screens/cyber_security_lab_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +54,7 @@ class _DSuperAppState extends State<DSuperApp> {
     {'icon': Icons.photo, 'en': 'Photo Analyzer', 'hi': 'फोटो विश्लेषण'},
     {'icon': Icons.phone, 'en': 'Phone Checker', 'hi': 'फोन चेकर'},
     {'icon': Icons.smart_toy, 'en': 'AI Assistant', 'hi': 'AI सहायक'},
+    {'icon': Icons.security, 'en': 'Cyber Security Lab', 'hi': 'साइबर सुरक्षा लैब'},
     {'icon': Icons.qr_code, 'en': 'QR & Barcode', 'hi': 'QR और बारकोड'},
     {'icon': Icons.folder, 'en': 'Document Manager', 'hi': 'डॉक्यूमेंट मैनेजर'},
     {'icon': Icons.calculate, 'en': 'Calculator', 'hi': 'कैलकुलेटर'},
@@ -214,6 +216,15 @@ class _DSuperAppState extends State<DSuperApp> {
       navigatorKey.currentState?.push(
         MaterialPageRoute(
           builder: (_) => AiChatPage(hindi: hindi),
+        ),
+      );
+      return;
+    }
+
+    if (name == 'Cyber Security Lab') {
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (_) => CyberSecurityLabPage(hindi: hindi),
         ),
       );
       return;
