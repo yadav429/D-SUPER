@@ -5,6 +5,8 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../services/ai_brain_service.dart';
+
 class VoiceAssistant extends StatefulWidget {
   final bool hindi;
   final Future<void> Function(String) onOpenModule;
@@ -22,6 +24,7 @@ class VoiceAssistant extends StatefulWidget {
 class _VoiceAssistantState extends State<VoiceAssistant> {
   final stt.SpeechToText speech = stt.SpeechToText();
   final FlutterTts tts = FlutterTts();
+  final AiBrainService aiBrain = AiBrainService();
 
   bool available = false;
   bool listening = false;
@@ -330,11 +333,8 @@ class _VoiceAssistantState extends State<VoiceAssistant> {
         return;
       }
 
-      await speak(
-        hindi
-            ? 'माफ कीजिए, यह कमांड समझ नहीं आया'
-            : 'Sorry, command not recognized',
-      );
+      final reply = await aiBrain.ask(command, hindi: hindi);
+      await speak(reply.text);
     } catch (e) {
       debugPrint('COMMAND ERROR: $e');
 
@@ -353,6 +353,7 @@ class _VoiceAssistantState extends State<VoiceAssistant> {
   void dispose() {
     speech.cancel();
     tts.stop();
+    aiBrain.dispose();
     super.dispose();
   }
 
