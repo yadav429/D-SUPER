@@ -117,7 +117,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
     body: Column(children: [
       Expanded(child: MobileScanner(onDetect: (capture) {
         if (handled) return;
-        final raw = capture.barcodes.firstOrNull?.rawValue;
+        final raw = capture.barcodes.isEmpty ? null : capture.barcodes.first.rawValue;
         if (raw == null) return;
         setState(() { value = raw; handled = true; });
       })),
