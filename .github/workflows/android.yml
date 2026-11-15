@@ -41,6 +41,29 @@ jobs:
             cp /tmp/d-super-AndroidManifest.xml android/app/src/main/AndroidManifest.xml
           fi
 
+      - name: Set Android compile SDK to API 36
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          candidates = [Path("android/app/build.gradle"), Path("android/app/build.gradle.kts")]
+          target = next((p for p in candidates if p.exists()), None)
+          if target is None:
+              raise SystemExit("Android app Gradle file not found")
+          source = target.read_text()
+          updated, count = re.subn(
+              r'(?m)^(\\s*compileSdk(?:Version)?\\s*(?:=\\s*)?)(?:flutter\\.compileSdkVersion|\\d+)',
+              r'\\g<1>36',
+              source,
+          )
+          if count == 0:
+              raise SystemExit("Could not find compileSdk declaration to update")
+          target.write_text(updated)
+          print(f"Updated {target} compileSdk to 36")
+          PY
+          sdkmanager "platforms;android-36"
+
       - name: Install dependencies
         run: flutter pub get
 
