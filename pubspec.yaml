@@ -16,6 +16,7 @@ dependencies:
   speech_to_text: ^7.4.0
   flutter_tts: ^4.2.5
   url_launcher: ^6.3.2
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
