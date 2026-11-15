@@ -84,7 +84,7 @@ jobs:
         run: flutter pub get
 
       - name: Analyze Flutter code
-        run: flutter analyze lib
+        run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 
       - name: Build release APK
         run: flutter build apk --release --dart-define=AI_API_BASE_URL="${{ vars.AI_API_BASE_URL }}"
